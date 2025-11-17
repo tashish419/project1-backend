@@ -14,4 +14,12 @@ app.use(express.urlencoded({ extended: true, limit: "16kb"})) //to encode the da
 app.use(express.static("public")) //to create public folder on server
 app.use(cookieParser())
 
+// import router
+import userRouter from "./routes/user.routes.js";
+
+//route declaration
+app.use("/api/v1/users", userRouter)
+
+app.get("/healthq",(req,res)=>{return res.send("OK")})
+
 export {app}
