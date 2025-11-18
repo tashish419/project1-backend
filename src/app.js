@@ -20,6 +20,6 @@ import userRouter from "./routes/user.routes.js";
 //route declaration
 app.use("/api/v1/users", userRouter)
 
-app.get("/healthq",(req,res)=>{return res.send("OK")})
+// app.get("/healthq",(req,res)=>{return res.send("OK")})
 
 export {app}
