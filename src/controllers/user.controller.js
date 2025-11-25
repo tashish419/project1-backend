@@ -150,8 +150,10 @@ const logoutUser = asyncHandler(async (req, res) => {
     // update db 
     // remove cookies
 
+    const userId = req.user?._id
+
     await User.findByIdAndUpdate(
-        req.user._id,
+        userId,
         {
             $set: {
                 refreshToken: undefined
@@ -168,12 +170,12 @@ const logoutUser = asyncHandler(async (req, res) => {
         secure: true
     }
 
-    res
+    return res
         .status(200)
         .clearCookie("accessToken", options)
         .clearCookie("refreshToken", options)
         .json(
-            new ApiResponse(200, {}, "User Log out Successfully")
+            new ApiResponse(200, {}, "User Logged Out Successfully")
         )
 })
 
@@ -204,7 +206,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
     const { accessToken, refreshToken } = await generateAccessTokenAndRefreshToken(user._id)
 
-    res
+    return res
         .status(200)
         .cookie("accessToken", accessToken, options)
         .cookie("newRefreshToken", refreshToken, options)
@@ -214,4 +216,67 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
 })
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken }
+const changePassword = asyncHandler(async (req, res) => {
+    // data from req->body : oldPassword, newPassword
+    // find user & verify user
+    // check password
+    // update password in db
+    // return response
+    try {
+        const { oldPassword, newPassword } = req.body
+
+        const user = await User.findById(req.user?._id)
+        console.log(user, "user login")
+
+        const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+
+        if (!isPasswordCorrect) {
+            throw new ApiError(400, "Invalid password")
+        }
+
+        user.password = newPassword
+        await user.save({ validateBeforeSave: false })
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, {}, "Password Changed Successfully")
+            )
+
+    } catch (error) {
+        throw new ApiError(401, "Unauthorized request")
+    }
+})
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+    return res.status(200).json(
+        new ApiResponse(200, req.user, "User fetched successfully")
+    )
+})
+
+const updateUserProfile = asyncHandler(async (req, res) => {
+    try {
+        const { fullName, email } = req.body
+        const user = await User.findByIdAndUpdate(req.user?._id,
+            {
+                $set: {
+                    fullName,
+                    email
+                }
+            },
+            { new: true }
+        ).select("-password")
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, user, "Profile updated successfully")
+            )
+
+
+    } catch (error) {
+        
+    }
+})
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken, changePassword, getCurrentUser, updateUserProfile }
